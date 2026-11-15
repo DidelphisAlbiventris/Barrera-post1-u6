@@ -1,0 +1,206 @@
+     1                                  ; Johan Barrera - 1152538 - Arquitectura de computadores
+     2                                  ; NASM, formato COM, codigo de 16 bits compatible con 8086.
+     3                                  bits 16
+     4                                  cpu 8086
+     5                                  org 100h
+     6 00000000 EB24                    jmp inicio
+     7 00000002 0A0014001E00280032-     array dw 10,20,30,40,50
+     7 0000000B 00                 
+     8 0000000C 5500                    nota1 dw 85
+     9 0000000E 4900                    nota2 dw 73
+    10 00000010 0000                    promedio dw 0
+    11 00000012 FFFF                    var_x dw 0FFFFh
+    12 00000014 010002000300040005-     matriz dw 1,2,3,4,5,6,7,8,9
+    12 0000001D 000600070008000900 
+    13                                  inicio:
+    14 00000026 BA[9401]                    mov dx, identidad
+    15 00000029 B409                        mov ah, 9
+    16 0000002B CD21                        int 21h
+    17 0000002D 31C0                        xor ax, ax
+    18 0000002F 31DB                        xor bx, bx
+    19 00000031 31C9                        xor cx, cx
+    20 00000033 31D2                        xor dx, dx
+    21 00000035 31F6                        xor si, si
+    22 00000037 31FF                        xor di, di
+    23 00000039 31ED                        xor bp, bp
+    24                                  
+    25                                  ; MODO 1: inmediatos; CX y DX se inicializaron para reproducibilidad.
+    26                                  inmediato:
+    27 0000003B B86400                      mov ax, 100
+    28 0000003E BBA500                      mov bx, 0A5h
+    29 00000041 83C137                      add cx, 55
+    30 00000044 81E2FF00                    and dx, 00FFh
+    31                                  cp_inmediato:
+    32 00000048 E89200                      call mostrar
+    33                                  ; MODO 2: direccion directa relativa a DS.
+    34                                  directo:
+    35 0000004B A1[1200]                    mov ax, [var_x]
+    36 0000004E 8B1E[0200]                  mov bx, [array]
+    37 00000052 8B0E[0C00]                  mov cx, [nota1]
+    38 00000056 C706[1200]0000              mov word [var_x], 0
+    39                                  cp_directo:
+    40 0000005C E87E00                      call mostrar
+    41                                  ; MODO 3: puntero en SI, segmento DS por defecto.
+    42                                  indirecto:
+    43 0000005F BE[0C00]                    mov si, nota1
+    44 00000062 8B04                        mov ax, [si]
+    45 00000064 BE[0E00]                    mov si, nota2
+    46 00000067 8B1C                        mov bx, [si]
+    47 00000069 01D8                        add ax, bx
+    48 0000006B D1E8                        shr ax, 1
+    49 0000006D BE[1000]                    mov si, promedio
+    50 00000070 8904                        mov [si], ax
+    51                                  cp_indirecto:
+    52 00000072 E86800                      call mostrar
+    53                                  ; MODO 4: base + indice; elementos word de dos bytes.
+    54                                  indexado:
+    55 00000075 BB[0200]                    mov bx, array
+    56 00000078 BE0400                      mov si, 4
+    57 0000007B 8B00                        mov ax, [bx+si]
+    58                                  cp_elemento:
+    59 0000007D E85D00                      call mostrar
+    60 00000080 31C0                        xor ax, ax
+    61 00000082 BB[0200]                    mov bx, array
+    62 00000085 B90500                      mov cx, 5
+    63 00000088 BE0800                      mov si, 8
+    64                                  bucle_array:
+    65 0000008B 0300                        add ax, [bx+si]
+    66 0000008D 83EE02                      sub si, 2
+    67 00000090 E2F9                        loop bucle_array
+    68                                  cp_array:
+    69 00000092 E84800                      call mostrar
+    70 00000095 BB[0C00]                    mov bx, nota1
+    71 00000098 8B07                        mov ax, [bx]
+    72 0000009A 8B4F02                      mov cx, [bx+2]
+    73 0000009D 8B5704                      mov dx, [bx+4]
+    74                                  cp_struct:
+    75 000000A0 E83A00                      call mostrar
+    76                                  ; MARCO BP: SS es el segmento predeterminado.
+    77                                  marco:
+    78 000000A3 55                          push bp
+    79 000000A4 89E5                        mov bp, sp
+    80                                  cp_reserva_antes:
+    81 000000A6 83EC04                      sub sp, 4
+    82                                  cp_reserva_despues:
+    83 000000A9 C746FE6300                  mov word [bp-2], 99
+    84 000000AE C746FCFA00                  mov word [bp-4], 250
+    85                                  cp_locales:
+    86 000000B3 8B46FE                      mov ax, [bp-2]
+    87 000000B6 0346FC                      add ax, [bp-4]
+    88                                  cp_pila:
+    89 000000B9 E82100                      call mostrar
+    90 000000BC 89EC                        mov sp, bp
+    91 000000BE 5D                          pop bp
+    92                                  cp_restaurado:
+    93 000000BF 90                          nop
+    94                                  ; MATRIZ: EA = base + (fila*3+columna)*2.
+    95                                  matriz_inicio:
+    96 000000C0 B80100                      mov ax, 1
+    97 000000C3 BB0300                      mov bx, 3
+    98 000000C6 F7E3                        mul bx
+    99 000000C8 D1E0                        shl ax, 1
+   100 000000CA 89C6                        mov si, ax
+   101 000000CC B90200                      mov cx, 2
+   102 000000CF D1E1                        shl cx, 1
+   103 000000D1 01CE                        add si, cx
+   104 000000D3 BB[1400]                    mov bx, matriz
+   105 000000D6 8B10                        mov dx, [bx+si]
+   106                                  cp_matriz:
+   107 000000D8 E80200                      call mostrar
+   108                                  fin:
+   109 000000DB CD20                        int 20h
+   110                                  
+   111                                  ; Imprime una instantanea REAL y restaura todos los registros y FLAGS.
+   112                                  ; SP mostrado corresponde al llamador antes de CALL.
+   113                                  mostrar:
+   114 000000DD 9C                          pushf
+   115 000000DE 50                          push ax
+   116 000000DF 53                          push bx
+   117 000000E0 51                          push cx
+   118 000000E1 52                          push dx
+   119 000000E2 56                          push si
+   120 000000E3 57                          push di
+   121 000000E4 55                          push bp
+   122 000000E5 89E5                        mov bp, sp
+   123 000000E7 BA[7001]                    mov dx, titulo
+   124 000000EA B409                        mov ah, 9
+   125 000000EC CD21                        int 21h
+   126 000000EE BE[7E01]                    mov si, nombres
+   127 000000F1 BF0C00                      mov di, 12
+   128 000000F4 B90400                      mov cx, 4
+   129                                  .reg:
+   130 000000F7 AC                          lodsb
+   131 000000F8 88C2                        mov dl, al
+   132 000000FA B402                        mov ah, 2
+   133 000000FC CD21                        int 21h
+   134 000000FE B23D                        mov dl, '='
+   135 00000100 CD21                        int 21h
+   136 00000102 368B1B                      mov bx, [ss:bp+di]
+   137 00000105 E83700                      call hexword
+   138 00000108 83EF02                      sub di, 2
+   139 0000010B E2EA                        loop .reg
+   140 0000010D BA[8201]                    mov dx, otros
+   141 00000110 B409                        mov ah, 9
+   142 00000112 CD21                        int 21h
+   143 00000114 368B5E04                    mov bx, [ss:bp+4]
+   144 00000118 E82400                      call hexword
+   145 0000011B 368B5E00                    mov bx, [ss:bp]
+   146 0000011F E81D00                      call hexword
+   147 00000122 8D5E12                      lea bx, [bp+18]
+   148 00000125 E81700                      call hexword
+   149 00000128 368B5E0E                    mov bx, [ss:bp+14]
+   150 0000012C E81000                      call hexword
+   151 0000012F BA[6D01]                    mov dx, salto
+   152 00000132 B409                        mov ah, 9
+   153 00000134 CD21                        int 21h
+   154 00000136 5D                          pop bp
+   155 00000137 5F                          pop di
+   156 00000138 5E                          pop si
+   157 00000139 5A                          pop dx
+   158 0000013A 59                          pop cx
+   159 0000013B 5B                          pop bx
+   160 0000013C 58                          pop ax
+   161 0000013D 9D                          popf
+   162 0000013E C3                          ret
+   163                                  hexword:
+   164 0000013F 50                          push ax
+   165 00000140 51                          push cx
+   166 00000141 52                          push dx
+   167 00000142 B90400                      mov cx, 4
+   168                                  .hex:
+   169 00000145 D1C3                        rol bx, 1
+   170 00000147 D1C3                        rol bx, 1
+   171 00000149 D1C3                        rol bx, 1
+   172 0000014B D1C3                        rol bx, 1
+   173 0000014D 88DA                        mov dl, bl
+   174 0000014F 80E20F                      and dl, 0Fh
+   175 00000152 80C230                      add dl, '0'
+   176 00000155 80FA39                      cmp dl, '9'
+   177 00000158 7603                        jbe .dig
+   178 0000015A 80C207                      add dl, 7
+   179                                  .dig:
+   180 0000015D B402                        mov ah, 2
+   181 0000015F CD21                        int 21h
+   182 00000161 E2E2                        loop .hex
+   183 00000163 B220                        mov dl, ' '
+   184 00000165 B402                        mov ah, 2
+   185 00000167 CD21                        int 21h
+   186 00000169 5A                          pop dx
+   187 0000016A 59                          pop cx
+   188 0000016B 58                          pop ax
+   189 0000016C C3                          ret
+   190 0000016D 0D0A24                  salto db 13,10,'$'
+   191 00000170 41582F42582F43582F-     titulo db 'AX/BX/CX/DX: $'
+   191 00000179 44583A2024         
+   192 0000017E 41424344                nombres db 'ABCD'
+   193 00000182 205349204250205350-     otros db ' SI BP SP FLAGS: $'
+   193 0000018B 20464C4147533A2024 
+   194 00000194 4A6F68616E20426172-     identidad db 'Johan Barrera | Cod: 1152538',13,10
+   194 0000019D 72657261207C20436F-
+   194 000001A6 643A20313135323533-
+   194 000001AF 380D0A             
+   195 000001B2 417271756974656374-               db 'Arquitectura de computadores - Unidad 6',13,10,'$'
+   195 000001BB 75726120646520636F-
+   195 000001C4 6D70757461646F7265-
+   195 000001CD 73202D20556E696461-
+   195 000001D6 6420360D0A24       
