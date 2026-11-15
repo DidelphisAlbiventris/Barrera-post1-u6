@@ -1,0 +1,15 @@
+Compilacion REAL fuera de DOSBox (Linux).
+Johan Barrera - 1152538 - Arquitectura de computadores
+NASM version 2.16.03 compiled on Nov 14 2026
+> nasm -f bin -Werror lab6_instrucciones.asm -o lab6_instrucciones.com -l listados/lab6_instrucciones.lst
+Salida: (sin errores ni advertencias)
+Tamano: 480 bytes
+> nasm -f bin -Werror lab6_modos.asm -o lab6_modos.com -l listados/lab6_modos.lst
+Salida: (sin errores ni advertencias)
+Tamano: 475 bytes
+> nasm -f bin -Werror variantes/lab6_factorial.asm -o variantes/lab6_factorial.com -l listados/lab6_factorial.lst
+Salida: (sin errores ni advertencias)
+Tamano: 481 bytes
+> nasm -f bin -Werror variantes/lab6_inverso.asm -o variantes/lab6_inverso.com -l listados/lab6_inverso.lst
+Salida: (sin errores ni advertencias)
+Tamano: 476 bytes
