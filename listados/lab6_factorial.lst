@@ -1,0 +1,225 @@
+     1                                  ; Johan Barrera - 1152538 - Arquitectura de computadores
+     2                                  ; NASM, formato COM, codigo de 16 bits compatible con 8086.
+     3                                  bits 16
+     4                                  cpu 8086
+     5                                  org 100h
+     6 00000000 EB08                    jmp inicio
+     7 00000002 2D00                    valor_a dw 45
+     8 00000004 0C00                    valor_b dw 12
+     9 00000006 0000                    resultado dw 0
+    10 00000008 05                      contador db 5
+    11 00000009 0F                      mascara db 0Fh
+    12                                  inicio:
+    13 0000000A BA[9901]                    mov dx, identidad
+    14 0000000D B409                        mov ah, 9
+    15 0000000F CD21                        int 21h
+    16 00000011 31C0                        xor ax, ax
+    17 00000013 31DB                        xor bx, bx
+    18 00000015 31C9                        xor cx, cx
+    19 00000017 31D2                        xor dx, dx
+    20 00000019 31F6                        xor si, si
+    21 0000001B 31FF                        xor di, di
+    22 0000001D 31ED                        xor bp, bp
+    23                                  
+    24                                  ; BLOQUE 1: transferencia, direcciones y preservacion en pila.
+    25                                  transferencia:
+    26 0000001F A1[0200]                    mov ax, [valor_a]
+    27 00000022 8B1E[0400]                  mov bx, [valor_b]
+    28 00000026 89C1                        mov cx, ax
+    29 00000028 89DA                        mov dx, bx
+    30 0000002A 8D36[0200]                  lea si, [valor_a]
+    31 0000002E 8B04                        mov ax, [si]
+    32 00000030 87D1                        xchg cx, dx
+    33 00000032 87D1                        xchg cx, dx
+    34 00000034 50                          push ax
+    35 00000035 B8FFFF                      mov ax, 0FFFFh
+    36 00000038 58                          pop ax
+    37                                  cp_transferencia:
+    38 00000039 E8A600                      call mostrar
+    39                                  ; BLOQUE 2: aritmetica. MUL de byte produce AX, no DX:AX.
+    40 0000003C A1[0200]                    mov ax, [valor_a]
+    41 0000003F 0306[0400]                  add ax, [valor_b]
+    42                                  cp_add:
+    43 00000043 A3[0600]                    mov [resultado], ax
+    44 00000046 E89900                      call mostrar
+    45 00000049 A1[0400]                    mov ax, [valor_b]
+    46 0000004C 2B06[0200]                  sub ax, [valor_a]
+    47                                  cp_sub:
+    48 00000050 E88F00                      call mostrar
+    49 00000053 A1[0200]                    mov ax, [valor_a]
+    50 00000056 40                          inc ax
+    51 00000057 48                          dec ax
+    52 00000058 B00A                        mov al, 10
+    53 0000005A B307                        mov bl, 7
+    54 0000005C F6E3                        mul bl
+    55                                  cp_mul:
+    56 0000005E E88100                      call mostrar
+    57 00000061 B86400                      mov ax, 100
+    58 00000064 B307                        mov bl, 7
+    59 00000066 F6F3                        div bl
+    60                                  cp_div:
+    61 00000068 E87700                      call mostrar
+    62                                  ; BLOQUE 3: mascaras y desplazamientos.
+    63 0000006B B0B7                        mov al, 0B7h
+    64 0000006D 2206[0900]                  and al, [mascara]
+    65                                  cp_and:
+    66 00000071 E86E00                      call mostrar
+    67 00000074 B0B7                        mov al, 0B7h
+    68 00000076 0CF0                        or al, 0F0h
+    69 00000078 B0AA                        mov al, 0AAh
+    70 0000007A 34FF                        xor al, 0FFh
+    71 0000007C 31DB                        xor bx, bx
+    72 0000007E B0B7                        mov al, 0B7h
+    73 00000080 A801                        test al, 1
+    74                                  cp_test:
+    75 00000082 E85D00                      call mostrar
+    76 00000085 B008                        mov al, 8
+    77 00000087 D0E0                        shl al, 1
+    78 00000089 D0E0                        shl al, 1
+    79 0000008B D0E8                        shr al, 1
+    80                                  ; BLOQUE 4: comparacion con signo y suma contada.
+    81 0000008D A1[0200]                    mov ax, [valor_a]
+    82 00000090 3B06[0400]                  cmp ax, [valor_b]
+    83                                  cp_cmp:
+    84 00000094 7F06                        jg mayor
+    85 00000096 7409                        je igual
+    86 00000098 31C9                        xor cx, cx
+    87 0000009A EB08                        jmp fin_cmp
+    88                                  mayor:
+    89 0000009C B90100                      mov cx, 1
+    90 0000009F EB03                        jmp fin_cmp
+    91                                  igual:
+    92 000000A1 B90200                      mov cx, 2
+    93                                  fin_cmp:
+    94 000000A4 B80100                      mov ax, 1
+    95 000000A7 B90500                      mov cx, 5
+    96 000000AA BB0100                      mov bx, 1
+    97                                  bucle_suma:
+    98 000000AD F7E3                        mul bx
+    99 000000AF 43                          inc bx
+   100 000000B0 E2FB                        loop bucle_suma
+   101                                  cp_bucle:
+   102 000000B2 E82D00                      call mostrar
+   103                                  ; BLOQUE 5: cada operacion parte del mismo byte 81h.
+   104 000000B5 B081                        mov al, 81h
+   105 000000B7 88C3                        mov bl, al
+   106 000000B9 D0E3                        shl bl, 1
+   107                                  cp_shl:
+   108 000000BB E82400                      call mostrar
+   109 000000BE 88C1                        mov cl, al
+   110 000000C0 D0C1                        rol cl, 1
+   111                                  cp_rol:
+   112 000000C2 E81D00                      call mostrar
+   113 000000C5 88C2                        mov dl, al
+   114 000000C7 D0EA                        shr dl, 1
+   115                                  cp_shr:
+   116 000000C9 E81600                      call mostrar
+   117 000000CC 88C7                        mov bh, al
+   118 000000CE D0CF                        ror bh, 1
+   119                                  cp_ror:
+   120 000000D0 E80F00                      call mostrar
+   121 000000D3 B0A5                        mov al, 0A5h
+   122                                      ; CL se preserva; cuatro rotaciones unitarias son validas en 8086.
+   123 000000D5 D0C0                        rol al, 1
+   124 000000D7 D0C0                        rol al, 1
+   125 000000D9 D0C0                        rol al, 1
+   126 000000DB D0C0                        rol al, 1
+   127                                  cp_nibbles:
+   128 000000DD E80200                      call mostrar
+   129                                  fin:
+   130 000000E0 CD20                        int 20h
+   131                                  
+   132                                  ; Imprime una instantanea REAL y restaura todos los registros y FLAGS.
+   133                                  ; SP mostrado corresponde al llamador antes de CALL.
+   134                                  mostrar:
+   135 000000E2 9C                          pushf
+   136 000000E3 50                          push ax
+   137 000000E4 53                          push bx
+   138 000000E5 51                          push cx
+   139 000000E6 52                          push dx
+   140 000000E7 56                          push si
+   141 000000E8 57                          push di
+   142 000000E9 55                          push bp
+   143 000000EA 89E5                        mov bp, sp
+   144 000000EC BA[7501]                    mov dx, titulo
+   145 000000EF B409                        mov ah, 9
+   146 000000F1 CD21                        int 21h
+   147 000000F3 BE[8301]                    mov si, nombres
+   148 000000F6 BF0C00                      mov di, 12
+   149 000000F9 B90400                      mov cx, 4
+   150                                  .reg:
+   151 000000FC AC                          lodsb
+   152 000000FD 88C2                        mov dl, al
+   153 000000FF B402                        mov ah, 2
+   154 00000101 CD21                        int 21h
+   155 00000103 B23D                        mov dl, '='
+   156 00000105 CD21                        int 21h
+   157 00000107 368B1B                      mov bx, [ss:bp+di]
+   158 0000010A E83700                      call hexword
+   159 0000010D 83EF02                      sub di, 2
+   160 00000110 E2EA                        loop .reg
+   161 00000112 BA[8701]                    mov dx, otros
+   162 00000115 B409                        mov ah, 9
+   163 00000117 CD21                        int 21h
+   164 00000119 368B5E04                    mov bx, [ss:bp+4]
+   165 0000011D E82400                      call hexword
+   166 00000120 368B5E00                    mov bx, [ss:bp]
+   167 00000124 E81D00                      call hexword
+   168 00000127 8D5E12                      lea bx, [bp+18]
+   169 0000012A E81700                      call hexword
+   170 0000012D 368B5E0E                    mov bx, [ss:bp+14]
+   171 00000131 E81000                      call hexword
+   172 00000134 BA[7201]                    mov dx, salto
+   173 00000137 B409                        mov ah, 9
+   174 00000139 CD21                        int 21h
+   175 0000013B 5D                          pop bp
+   176 0000013C 5F                          pop di
+   177 0000013D 5E                          pop si
+   178 0000013E 5A                          pop dx
+   179 0000013F 59                          pop cx
+   180 00000140 5B                          pop bx
+   181 00000141 58                          pop ax
+   182 00000142 9D                          popf
+   183 00000143 C3                          ret
+   184                                  hexword:
+   185 00000144 50                          push ax
+   186 00000145 51                          push cx
+   187 00000146 52                          push dx
+   188 00000147 B90400                      mov cx, 4
+   189                                  .hex:
+   190 0000014A D1C3                        rol bx, 1
+   191 0000014C D1C3                        rol bx, 1
+   192 0000014E D1C3                        rol bx, 1
+   193 00000150 D1C3                        rol bx, 1
+   194 00000152 88DA                        mov dl, bl
+   195 00000154 80E20F                      and dl, 0Fh
+   196 00000157 80C230                      add dl, '0'
+   197 0000015A 80FA39                      cmp dl, '9'
+   198 0000015D 7603                        jbe .dig
+   199 0000015F 80C207                      add dl, 7
+   200                                  .dig:
+   201 00000162 B402                        mov ah, 2
+   202 00000164 CD21                        int 21h
+   203 00000166 E2E2                        loop .hex
+   204 00000168 B220                        mov dl, ' '
+   205 0000016A B402                        mov ah, 2
+   206 0000016C CD21                        int 21h
+   207 0000016E 5A                          pop dx
+   208 0000016F 59                          pop cx
+   209 00000170 58                          pop ax
+   210 00000171 C3                          ret
+   211 00000172 0D0A24                  salto db 13,10,'$'
+   212 00000175 41582F42582F43582F-     titulo db 'AX/BX/CX/DX: $'
+   212 0000017E 44583A2024         
+   213 00000183 41424344                nombres db 'ABCD'
+   214 00000187 205349204250205350-     otros db ' SI BP SP FLAGS: $'
+   214 00000190 20464C4147533A2024 
+   215 00000199 4A6F68616E20426172-     identidad db 'Johan Barrera | Cod: 1152538',13,10
+   215 000001A2 72657261207C20436F-
+   215 000001AB 643A20313135323533-
+   215 000001B4 380D0A             
+   216 000001B7 417271756974656374-               db 'Arquitectura de computadores - Unidad 6',13,10,'$'
+   216 000001C0 75726120646520636F-
+   216 000001C9 6D70757461646F7265-
+   216 000001D2 73202D20556E696461-
+   216 000001DB 6420360D0A24       
